@@ -1,0 +1,5 @@
+Architecture Overview:
+- Worker Pipeline: Go Scheduler reads active endpoints from PostgreSQL/Redis -> Dispatches pings via lightweight Go worker pool (goroutines) -> Writes results to Redis stream/pub-sub.
+- State & Cache (Redis): Redis holds the latest ping status, current response times, and sliding-window rate limit error counters for sub-millisecond evaluation.
+- Storage (PostgreSQL): ACID-compliant relational DB storing Users, Workspaces, Endpoints, Alerting Webhook Rules, and 30-day historical log aggregations.
+- Alerting Dispatcher: If Redis detects threshold breach -> Asynchronous Go routine formats payload and posts JSON body to customer's Slack/Discord Webhook URL.

@@ -1,0 +1,17 @@
+LatencyOps Clean Code & Design System Standards:
+
+1. Backend Engineering Standards (Go / Golang):
+   - Architecture Pattern: Standard Clean Architecture / Layered Architecture:
+     * `/cmd` -> Application entry points.
+     * `/internal/handler` -> HTTP transport layer (validates requests, parses DTOs).
+     * `/internal/service` -> Business logic layer (evaluates thresholds, alerts).
+     * `/internal/repository` -> Data persistence layer (SQL queries, Redis pipelines).
+   - Error Handling: No silent failures. Wrap errors explicitly: `fmt.Errorf("failed to execute ping probe: %w", err)`.
+   - Concurrency Safety: Use worker pools with bounded channels to prevent goroutine leaks when pinging thousands of endpoints.
+   - Database Hygiene: Use parameterized SQL queries (`pgx` or `database/sql`) to completely eliminate SQL Injection risks.
+
+2. Frontend Engineering & UI/UX Standards (React / Tailwind):
+   - Aesthetics: Professional, minimal, dark-mode developer UI (similar to Vercel, Linear, or GitHub).
+   - Component Library: Lucide icons, Tailwind CSS, Shadcn UI / Radix UI primitives. Avoid flashy, cartoonish "vibe coded" UI.
+   - Visual Feedback: Real-time status indicators (Green dot = Healthy, Yellow dot = Degraded, Red dot = Down). Dynamic latency sparklines using Recharts.
+   - State Management: React Query (TanStack Query) for server-state caching, automatic refetching, and zero flash-of-unstyle content.

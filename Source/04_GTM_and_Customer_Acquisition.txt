@@ -1,0 +1,9 @@
+Monetization Model (Freemium Micro-SaaS):
+- Free Tier: Up to 3 endpoints, 5-minute check intervals, Email alerts only (Hooks indie devs and gets initial traffic).
+- Pro Tier ($29/month): Up to 20 endpoints, 60-second check intervals, multi-region pings, Slack/Discord alerts, 30-day history log.
+- Team Tier ($79/month): Up to 100 endpoints, 15-second checks, team seat access, priority alerting.
+
+Customer Acquisition Playbook:
+1. Direct Outreach (B2D): Reach out directly to CTOs, Tech Leads, and Senior Backend Engineers on LinkedIn/Twitter who post about microservices or API performance.
+2. Community Distribution: Launch on Product Hunt, Hacker News ("Show HN"), Reddit (r/devops, r/golang, r/SaaS, r/webdev), and Indie Hackers.
+3. Open-Source/Developer Hook: Provide a lightweight CLI or open-source Docker runner that lets devs run LatencyOps probes in their local dev/staging environments.

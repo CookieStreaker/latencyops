@@ -1,0 +1,13 @@
+Project Name: LatencyOps
+Product Vision: Real-Time API Health, Uptime & Rate-Limit Alerting Monitor for Developer Teams.
+Target Audience (ICP): Engineering teams, CTOs, Lead Backend Developers, and tech startups who need instant alerts when APIs degrade or hit rate limits.
+Core Value Prop: Lightweight, developer-first monitoring that sets up in 3 minutes, pings global endpoints, monitors latency/rate-limits, and sends instant Slack/Discord/Email webhooks.
+Target Tech Stack:
+- Backend Engine: Go (Golang) for high-concurrency background pings & probes
+- Fast Cache Layer: Redis for storing real-time ping states & sliding-window latency metrics
+- Persistence Database: PostgreSQL for user accounts, endpoint configurations, and alert history
+- Real-Time Stream: WebSockets for streaming live latency graphs
+- Frontend Dashboard: React / Next.js
+- Payment Gateway: Stripe Checkout
+Target Launch Window: 4-Week MVP execution.
+Focus: Rapid product output, user onboarding, and B2B customer acquisition.

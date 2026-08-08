@@ -1,0 +1,54 @@
+🚀 LatencyOps — Project Blueprint & Setup Progress Report
+1. Executive Summary & Product Vision
+Product Name: LatencyOps
+
+Core Value Prop: Real-time API health, uptime, and rate-limit alerting monitor built specifically for engineering teams, CTOs, and backend leads. It catches latency spikes and 429 (Too Many Requests) errors before users do.
+
+Target ICP: B2D (Business-to-Developer) market—funded early-stage startups and tech teams with business credit cards looking for zero-bloat, 2-minute API monitoring.
+
+Launch Goal: 4-Week MVP execution focused strictly on product output, reliability, and securing initial paying B2B customers ($29/month Pro tier).
+
+2. Tech Stack & Engineering Standards
+Backend Engine: Go (Golang 1.22+) for high-concurrency worker pools and probes.
+
+State & Cache Layer: Redis 7+ for sliding-window rate limit error counters and sub-millisecond status evaluation.
+
+Persistence DB: PostgreSQL 16+ (Supabase) for users, workspaces, endpoints, and alert logs.
+
+Frontend Dashboard: React / Next.js with Tailwind CSS, Shadcn UI primitives, and Lucide icons (Vercel/Linear dark mode aesthetic).
+
+Security Guardrails: Full adherence to OWASP Top 10 API Security rules (strict tenant isolation WHERE id = $1 AND workspace_id = $2, HttpOnly JWT cookies, and SSRF URL protection).
+
+3. Local Setup Completed So Far (Step 1 & Step 2 Executed)
+A. Repository & AI Instructions Setup
+Project Root: Created project folder at LatencyOps.
+
+Repository AI Instructions: Created .github/copilot-instructions.md containing strict guardrails for Clean Architecture, OWASP security standards, SSRF protection, and error handling.
+
+B. Clean Layered Architecture Generated
+Successfully initialized Go module (go mod init) and generated the production directory tree:
+
+Plaintext
+LatencyOps/
+├── .github/
+│   └── copilot-instructions.md
+├── cmd/
+│   ├── api/          # Entrypoint for REST API server
+│   └── worker/       # Entrypoint for Go concurrent ping worker pool
+├── internal/
+│   ├── domain/       # Core domain structs (Endpoint, PingResult, AlertRule)
+│   ├── handler/      # HTTP handlers & Webhook dispatchers
+│   ├── repository/   # PostgreSQL & Redis data access layer
+│   └── service/      # Business logic (probe scheduler, threshold checker)
+├── config/           # Environment variables & app configuration
+└── migrations/       # SQL schema migrations
+4. Immediate Next Step Execution Roadmap
+Chat 1 (Planning & Schema): Design PostgreSQL database tables and Redis key structures.
+
+Chat 2 (internal/domain & internal/pkg): Write strict domain models and the SSRF URL validator.
+
+Chat 3 (internal/service): Build the concurrent Go worker pool using goroutines to ping target URLs and calculate TTFB / status codes.
+
+Chat 4 (internal/repository): Write parameterized PostgreSQL queries and Redis pipeline logic.
+
+Chat 5 (cmd & Docker): Wire up the main.go entrypoints and docker-compose.yml.

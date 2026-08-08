@@ -1,0 +1,21 @@
+LatencyOps Security Architecture & Vulnerability Mitigation Rules:
+
+1. OWASP API Security Top 10 Mitigations:
+   - API1: Broken Object Level Authorization (BOLA):
+     * Rule: EVERY database query fetching or modifying an endpoint/workspace MUST enforce ownership: `WHERE id = $1 AND workspace_id = $2`.
+     * Rule: Use UUIDv4 or KSUIDs instead of auto-incrementing integer IDs to prevent object enumeration attacks.
+   - API2: Broken Authentication:
+     * Rule: Store JWT tokens in HttpOnly, Secure, SameSite=Strict cookies (NEVER in browser LocalStorage where XSS can steal them).
+     * Rule: Enforce short-lived JWT access tokens (15 mins) and cryptographically signed refresh tokens stored in Redis.
+     * Rule: Enforce Google OAuth 2.0 and TOTP 2FA for account security.
+   - API3: Broken Object Property Level Authorization (Mass Assignment):
+     * Rule: Explicitly map incoming JSON bodies to strictly typed Go structs (DTOs). Never bind raw HTTP requests directly to database models.
+   - API4: Unrestricted Resource Consumption:
+     * Rule: Implement Redis-backed token bucket rate limiting on every endpoint.
+     * Rule: Limit maximum HTTP request body size using `http.MaxBytesReader(w, r.Body, 1024*1024)` (1MB max).
+   - API7: Server-Side Request Forgery (SSRF):
+     * Rule: When the Go worker engine pings user-defined target URLs, validate the URL. Block requests to local/internal IP ranges (127.0.0.1, 10.0.0.0/8, 192.168.0.0/16, 169.254.169.254) to prevent internal cloud infrastructure scanning.
+
+2. Data Protection & Secrets Management:
+   - Sensitive user webhooks (Slack/Discord Webhook URLs) MUST be encrypted at rest in PostgreSQL using AES-256-GCM before database insertion.
+   - API secrets and database passwords must be loaded strictly via environment variables, never hardcoded.

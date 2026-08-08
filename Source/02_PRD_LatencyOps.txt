@@ -1,0 +1,10 @@
+MVP Core Features (Must-Haves for 4-Week Launch):
+1. User Auth & Workspace Management: User sign-up/login, API key generation, and organization workspaces.
+2. Endpoint Health Probes: Allow users to add HTTP/REST endpoints with custom check frequencies (e.g., 60-second intervals), headers, and target HTTP status codes.
+3. Concurrency Worker Engine: A Go background service using goroutines to ping registered endpoints globally, measure DNS/TLS/TTFB latency, and log output.
+4. Threshold Alerting Engine: Trigger instant alerts if an endpoint:
+   - Returns non-2xx status (e.g., 500, 502, 503)
+   - Returns 429 (Too Many Requests / Rate Limit Exceeded)
+   - Exceeds user-defined response latency (e.g., > 800ms for 3 consecutive checks)
+5. Alert Channels: Slack Webhooks, Discord Webhooks, and Email notifications.
+6. Real-Time Dashboard: React interface displaying endpoint status (UP/DOWN/DEGRADED), 24h uptime percentage, and latency graphs.

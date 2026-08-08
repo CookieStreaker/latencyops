@@ -1,0 +1,25 @@
+# Environment Variables & Secrets (CRITICAL FOR SECURITY)
+.env
+*.env
+*.env.local
+
+# Executables & Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# OS Specific Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+
+# Docker / Local Logs
+*.log
