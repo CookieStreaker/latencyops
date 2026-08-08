@@ -23,19 +23,30 @@ Write-Host "✅ Redis container running on port 6379" -ForegroundColor Green
 # 3. Launch API and Worker concurrently
 Write-Host "🚀 Starting LatencyOps Backend Cluster..." -ForegroundColor Cyan
 
-$apiJob = Start-Job -ScriptBlock {
-    param($db, $redis, $port)
-    $env:DATABASE_URL = $db
-    $env:REDIS_URL = $redis
-    $env:APP_PORT = $port
-    go run ./cmd/api/main.go
-} -ArgumentList $env:DATABASE_URL, $env:REDIS_URL, $env:APP_PORT
+# Start API Server in the background (Compatible with Windows PowerShell 5.1)
+$apiJob = Start-Job -Name "LatencyOpsAPI" -ScriptBlock {
+    param($projectPath)
+    
+    # Move into the project directory BEFORE running Go
+    Set-Location -Path $projectPath
 
-Write-Host "🌐 API Server job started (Job ID: $($apiJob.Id))" -ForegroundColor Yellow
+    # Import the environment variables from the parent terminal session
+    $env:DATABASE_URL = $using:env:DATABASE_URL
+    $env:REDIS_URL = $using:env:REDIS_URL
+    $env:APP_PORT = $using:env:APP_PORT
+    
+    go run ./cmd/api/main.go
+} -ArgumentList $PSScriptRoot
+
+Write-Host "🌐 API Server job started (Job Name: LatencyOpsAPI, Job ID: $($apiJob.Id))" -ForegroundColor Yellow
+Write-Host "💡 Note: To view live API Server logs, open a new PowerShell tab and run: Receive-Job -Name LatencyOpsAPI -Keep" -ForegroundColor DarkGray
+Write-Host "--------------------------------------------------------" -ForegroundColor DarkGray
 
 # Run Worker in the foreground
 go run ./cmd/worker/main.go
 
-# Cleanup API background job on shutdown
+# Cleanup API background job on shutdown (when you press Ctrl+C)
+Write-Host "🛑 Shutting down backend cluster..." -ForegroundColor Yellow
 Stop-Job -Job $apiJob
 Remove-Job -Job $apiJob
+Write-Host "✅ All jobs terminated cleanly." -ForegroundColor Green
