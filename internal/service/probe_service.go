@@ -53,11 +53,13 @@ func (s *probeService) ExecuteProbe(ctx context.Context, endpoint domain.Endpoin
 
 	if err != nil {
 		return domain.PingResult{
-			EndpointID: endpoint.ID,
-			StatusCode: 0,
-			Latency:    latency,
-			IsUp:       false,
-			Timestamp:  time.Now(),
+			WorkspaceID: endpoint.WorkspaceID,
+			EndpointID:  endpoint.ID,
+			StatusCode:  0,
+			Latency:     latency,
+			LatencyMs:   latency.Milliseconds(),
+			IsUp:        false,
+			Timestamp:   time.Now(),
 		}, fmt.Errorf("failed to execute ping probe: %w", err) 
 	}
 	defer resp.Body.Close()
@@ -65,10 +67,12 @@ func (s *probeService) ExecuteProbe(ctx context.Context, endpoint domain.Endpoin
 	isUp := resp.StatusCode >= 200 && resp.StatusCode < 300
 
 	return domain.PingResult{
-		EndpointID: endpoint.ID,
-		StatusCode: resp.StatusCode,
-		Latency:    latency,
-		IsUp:       isUp,
-		Timestamp:  time.Now(),
+		WorkspaceID: endpoint.WorkspaceID,
+		EndpointID:  endpoint.ID,
+		StatusCode:  resp.StatusCode,
+		Latency:     latency,
+		LatencyMs:   latency.Milliseconds(),
+		IsUp:        isUp,
+		Timestamp:   time.Now(),
 	}, nil
 }

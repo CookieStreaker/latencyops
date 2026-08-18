@@ -11,7 +11,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	// Replace "latencyops" with your actual go.mod module name if different
 	"latencyops/internal/domain"
 	"latencyops/internal/repository"
 	"latencyops/internal/service"
@@ -64,6 +63,7 @@ func main() {
 
 	// 5. Instantiate Repositories
 	endpointRepo := repository.NewPostgresEndpointRepo(pgPool)
+	pingResultRepo := repository.NewPostgresPingResultRepo(pgPool)
 	stateRepo := repository.NewRedisStateRepo(redisClient)
 
 	// 6. Instantiate Services
@@ -78,7 +78,11 @@ func main() {
 	workerPool.Start(ctx)
 	log.Printf("🛠️  Worker pool started (Concurrency: %d)", ConcurrencyLimit)
 
-	// 8. Start Results Listener (Redis Writer Pipeline)
+	// 8. Start Results Listener — The Full Data Pipeline
+	// Each result flows through three independent stages:
+	//   1. Postgres persistence (historical metrics)
+	//   2. Redis Pub/Sub publish (SSE real-time stream)
+	//   3. Redis state cache (dashboard snapshot)
 	go func() {
 		for {
 			select {
@@ -89,10 +93,25 @@ func main() {
 				// Use a fresh background context here so DB saves aren't abruptly 
 				// canceled mid-flight if the parent context closes.
 				saveCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				if err := stateRepo.SavePingState(saveCtx, result); err != nil {
-					// We do not fail silently, but we do not crash the app either.
-					log.Printf("ERROR: failed to save ping state to Redis for endpoint %s: %v", result.EndpointID, fmt.Errorf("redis state error: %w", err))
+
+				// Stage 1: Persist to PostgreSQL (historical record)
+				if err := pingResultRepo.SavePingResult(saveCtx, result); err != nil {
+					log.Printf("ERROR: failed to persist ping result to PostgreSQL for endpoint %s: %v",
+						result.EndpointID, fmt.Errorf("postgres write error: %w", err))
 				}
+
+				// Stage 2: Publish to Redis Pub/Sub (SSE consumers)
+				if err := stateRepo.PublishPingResult(saveCtx, result); err != nil {
+					log.Printf("ERROR: failed to publish ping result to Redis Pub/Sub for endpoint %s: %v",
+						result.EndpointID, fmt.Errorf("redis pubsub error: %w", err))
+				}
+
+				// Stage 3: Cache current state in Redis (dashboard snapshots)
+				if err := stateRepo.SavePingState(saveCtx, result); err != nil {
+					log.Printf("ERROR: failed to save ping state to Redis for endpoint %s: %v",
+						result.EndpointID, fmt.Errorf("redis state error: %w", err))
+				}
+
 				cancel()
 			}
 		}
@@ -137,4 +156,4 @@ func runDispatchCycle(ctx context.Context, repo repository.EndpointRepository, p
 	for _, ep := range endpoints {
 		pool.Dispatch(ep)
 	}
-}
+}

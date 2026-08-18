@@ -19,11 +19,13 @@ type Endpoint struct {
 
 // PingResult represents the output from our concurrent worker pool.
 type PingResult struct {
-	EndpointID string
-	StatusCode int
-	Latency    time.Duration
-	IsUp       bool
-	Timestamp  time.Time
+	WorkspaceID string        `json:"workspace_id"`
+	EndpointID  string        `json:"endpoint_id"`
+	StatusCode  int           `json:"status_code"`
+	LatencyMs   int64         `json:"latency_ms"`
+	Latency     time.Duration `json:"-"` // Internal use only; LatencyMs is the serialized form
+	IsUp        bool          `json:"is_up"`
+	Timestamp   time.Time     `json:"timestamp"`
 }
 
 // AlertRule defines the threshold criteria for triggering webhooks.

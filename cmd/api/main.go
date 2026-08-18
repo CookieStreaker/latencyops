@@ -14,8 +14,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	// Replace "latencyops" with your actual go.mod module name if different
 	"latencyops/internal/domain"
+	"latencyops/internal/handler"
 	"latencyops/internal/repository"
 )
 
@@ -81,15 +81,21 @@ func main() {
 	mux.HandleFunc("GET /api/v1/endpoints", getEndpointsHandler(endpointRepo))
 	mux.HandleFunc("POST /api/v1/endpoints", createEndpointHandler(endpointRepo))
 
+	// SSE Real-Time Metrics Stream (Phase 9)
+	// Uses Redis Pub/Sub subscription — requires WriteTimeout=0 for long-lived connections
+	mux.HandleFunc("GET /api/v1/live-metrics", handler.LiveMetricsHandler(redisClient))
+
 	// 8. Apply Global Middleware (Security & Headers)
-	handler := applySecurityMiddleware(mux)
+	finalHandler := applySecurityMiddleware(mux)
 
 	// 9. Configure HTTP Server
+	// WriteTimeout is set to 0 to support long-lived SSE connections.
+	// The SSE handler manages its own heartbeat and client disconnect detection.
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      handler,
+		Handler:      finalHandler,
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 0, // Disabled for SSE; individual handlers manage timeouts
 		IdleTimeout:  120 * time.Second,
 	}
 
@@ -145,7 +151,6 @@ func getEndpointsHandler(repo repository.EndpointRepository) http.HandlerFunc {
 
 func createEndpointHandler(repo repository.EndpointRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// IN A REAL APP: Extract WorkspaceID from JWT context here.
 		workspaceID := r.Header.Get("X-Workspace-ID")
 		if workspaceID == "" {
 			http.Error(w, `{"error": "missing workspace_id"}`, http.StatusUnauthorized)
@@ -158,20 +163,29 @@ func createEndpointHandler(repo repository.EndpointRepository) http.HandlerFunc 
 			return
 		}
 
-		// Apply OWASP API7 Mitigation: SSRF Validation using the correct TargetURL field
+		// SSRF Validation
 		if err := domain.ValidateURL(input.TargetURL); err != nil {
 			log.Printf("SECURITY: SSRF attempt blocked for URL %s: %v", input.TargetURL, err)
 			http.Error(w, fmt.Sprintf(`{"error": "invalid url: %s"}`, err.Error()), http.StatusBadRequest)
 			return
 		}
 
-		// Assign the verified tenant ID to prevent BOLA
+		// Populate workspace and timestamp
 		input.WorkspaceID = workspaceID
+		if input.CreatedAt.IsZero() {
+			input.CreatedAt = time.Now()
+		}
 
-		// TODO: Save to Postgres using repo.Save(ctx, input) when implemented
-		
+		// Save to PostgreSQL using your existing repository method!
+		if err := repo.Save(r.Context(), &input); err != nil {
+			log.Printf("ERROR: Failed to save endpoint to database: %v", err)
+			http.Error(w, `{"error": "failed to persist endpoint"}`, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{"status": "created", "id": input.ID})
+		json.NewEncoder(w).Encode(input)
 	}
 }
 
@@ -183,7 +197,6 @@ func applySecurityMiddleware(next http.Handler) http.Handler {
 		r.Body = http.MaxBytesReader(w, r.Body, MaxBodySize)
 
 		// 2. Standard Secure JSON Headers
-		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
@@ -200,4 +213,4 @@ func applySecurityMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
+}

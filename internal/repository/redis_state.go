@@ -67,9 +67,9 @@ func (r *redisStateRepo) ResetFailureCount(ctx context.Context, endpointID strin
 	return nil
 }
 
-// PublishPingResult streams the result to a Pub/Sub channel so our Webhook dispatcher can process it immediately.
+// PublishPingResult streams the result to a per-workspace Pub/Sub channel for SSE consumers.
 func (r *redisStateRepo) PublishPingResult(ctx context.Context, result domain.PingResult) error {
-	channel := "ping_results_stream"
+	channel := fmt.Sprintf("health_checks:%s", result.WorkspaceID)
 	
 	data, err := json.Marshal(result)
 	if err != nil {
@@ -77,7 +77,7 @@ func (r *redisStateRepo) PublishPingResult(ctx context.Context, result domain.Pi
 	}
 
 	if err := r.client.Publish(ctx, channel, data).Err(); err != nil {
-		return fmt.Errorf("failed to publish ping result to stream: %w", err)
+		return fmt.Errorf("failed to publish ping result to channel %s: %w", channel, err)
 	}
 
 	return nil
